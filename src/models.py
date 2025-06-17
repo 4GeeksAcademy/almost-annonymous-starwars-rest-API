@@ -20,19 +20,31 @@ class User(db.Model):
     def serialize(self):
         characters = [character.serialize()
                       for character in self.favorite_characters]
-        planets = [planets.serialize() for planet in self.favorite_planets]
-        vehicles = [vehicles.serialize() for vehicle in self.favorite_vehicles]
+        planets = [planet.serialize() for planet in self.favorite_planets]
+        vehicles = [vehicle.serialize() for vehicle in self.favorite_vehicles]
         return {
             "id": self.id,
             "email": self.email,
-            "favorites": [*characters, *planets, *vehicles]
+            "favorites": {"characters": characters,
+                          "planets": planets,
+                          "vehicles": vehicles}
             # do not serialize the password, its a security breach
+        }
+    def serialize_favorites(self):
+        characters = [character.serialize()
+                      for character in self.favorite_characters]
+        planets = [planet.serialize() for planet in self.favorite_planets]
+        vehicles = [vehicle.serialize() for vehicle in self.favorite_vehicles]
+        return {
+            "favorites": {"characters": characters,
+                          "planets": planets,
+                          "vehicles": vehicles}
         }
 
 
 class FavoriteCharacters(db.Model):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     character_id: Mapped[int] = mapped_column(ForeignKey("character.id"))
     user: Mapped["User"] = relationship(
         "User", back_populates="favorite_characters")
@@ -49,7 +61,7 @@ class FavoriteCharacters(db.Model):
 
 class FavoritePlanets(db.Model):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     planet_id: Mapped[int] = mapped_column(ForeignKey("planet.id"))
     user: Mapped["User"] = relationship(
         "User", back_populates="favorite_planets")
@@ -66,7 +78,7 @@ class FavoritePlanets(db.Model):
 
 class FavoriteVehicles(db.Model):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicle.id"))
     user: Mapped["User"] = relationship(
         "User", back_populates="favorite_vehicles")
@@ -92,6 +104,17 @@ class Character(db.Model):
     favorite_character: Mapped[list["FavoriteCharacters"]] = relationship(
         backref="favorite_character")
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "image_url": self.image_url,
+            "biography": self.biography,
+            "birthday": self.birthday,
+            "gender": self.gender,
+        }
+
 
 class Planet(db.Model):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
@@ -105,6 +128,17 @@ class Planet(db.Model):
     favorite_planet: Mapped[list["FavoritePlanets"]
                             ] = relationship(backref="favorite_planet")
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "image_url": self.image_url,
+            "history": self.history,
+            "terrain": self.terrain,
+            "inhabitants": self.inhabitants,
+            "language": self.language
+        }
+
 
 class Vehicle(db.Model):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
@@ -113,3 +147,11 @@ class Vehicle(db.Model):
     passengers: Mapped[int] = mapped_column()
     favorite_vehicle: Mapped[list["FavoriteVehicles"]
                              ] = relationship(backref="favorite_vehicle")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "type": self.type,
+            "passengers": self.passengers,
+        }
